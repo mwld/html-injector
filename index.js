@@ -115,7 +115,22 @@ module.exports["plugin"] = function (opts, bs) {
     /**
      * File changed event
      */
-    bs.events.on("file:changed", fileChangedEvent);
+    bs.events.on("file:changed", debounce(fileChangedEvent, opts.debounce));
+
+    function debounce(func, wait, immediate) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    }
 
     /**
      * Internal event
@@ -187,9 +202,7 @@ module.exports["plugin"] = function (opts, bs) {
 
         debug('Responding to file change event', data.namespace);
 
-        setTimeout(function() {
-            requestNew(opts)
-        }, opts.timeout);
+        requestNew(opts);
     }
 
     function pluginEvent () {
